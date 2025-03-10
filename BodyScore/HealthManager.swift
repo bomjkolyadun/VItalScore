@@ -18,6 +18,21 @@ class HealthManager: ObservableObject {
     @Published var metabolicScore: Double = 0
     @Published var lifestyleScore: Double = 0
     
+    // User demographics
+    @Published var userHeight: Double = 0 // in meters
+    @Published var userGender: HKBiologicalSex = .notSet
+    @Published var userAge: Int = 0
+    
+    // Computed property for formatted height
+    var formattedHeight: String {
+        if userHeight <= 0 {
+            return "Not available"
+        }
+        
+        let heightInCm = userHeight * 100
+        return String(format: "%.0f cm", heightInCm)
+    }
+    
     // User preferences for metric weighting
     var userPreferences: UserPreferences = .defaultPreferences
     
@@ -34,7 +49,14 @@ class HealthManager: ObservableObject {
               let oxygenSaturation = HKObjectType.quantityType(forIdentifier: .oxygenSaturation),
               let bloodPressureSystolic = HKObjectType.quantityType(forIdentifier: .bloodPressureSystolic),
               let bloodPressureDiastolic = HKObjectType.quantityType(forIdentifier: .bloodPressureDiastolic),
-              let basalEnergyBurned = HKObjectType.quantityType(forIdentifier: .basalEnergyBurned)
+              let basalEnergyBurned = HKObjectType.quantityType(forIdentifier: .basalEnergyBurned),
+              let height = HKObjectType.quantityType(forIdentifier: .height),
+              let dob = HKObjectType.characteristicType(
+                forIdentifier: .dateOfBirth
+              ),
+              let sex = HKObjectType.characteristicType(
+                forIdentifier: .biologicalSex
+              )
         else {
             return Set<HKObjectType>()
         }
@@ -45,7 +67,7 @@ class HealthManager: ObservableObject {
             vo2Max, stepCount, activeEnergyBurned,
             restingHeartRate, heartRateVariability, oxygenSaturation,
             bloodPressureSystolic, bloodPressureDiastolic,
-            basalEnergyBurned
+            basalEnergyBurned, height, sex,
         ]
         
         // Add workout type
@@ -82,6 +104,7 @@ class HealthManager: ObservableObject {
                 if success {
                     print("HealthKit authorization granted")
                     self.isAuthorized = true
+                    self.fetchUserDemographics()
                     self.fetchHealthData()
                 } else if let error = error {
                     print("Authorization failed with error: \(error.localizedDescription)")
@@ -103,6 +126,80 @@ class HealthManager: ObservableObject {
         // Calculate overall body score after fetching all data
         calculateBodyScore()
     }
+    
+    // Fetch user demographics
+    private func fetchUserDemographics() {
+        fetchHeight()
+        fetchBiologicalSex()
+        fetchAge()
+    }
+    
+    // MARK: - Demographic Data Fetchers
+    
+    private func fetchHeight() {
+        guard let heightType = HKQuantityType.quantityType(forIdentifier: .height) else {
+            print("Height type not available")
+            return
+        }
+        
+        // Get the most recent height measurement
+        let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: false)
+        let query = HKSampleQuery(
+            sampleType: heightType,
+            predicate: nil,
+            limit: 1,
+            sortDescriptors: [sortDescriptor]
+        ) { _, samples, error in
+            if let error = error {
+                print("Error fetching height: \(error.localizedDescription)")
+                return
+            }
+            
+            guard let samples = samples, let sample = samples.first as? HKQuantitySample else {
+                print("No height data found")
+                return
+            }
+            
+            let heightValue = sample.quantity.doubleValue(for: HKUnit.meter())
+            print("Fetched height: \(heightValue) meters")
+            
+            DispatchQueue.main.async {
+                self.userHeight = heightValue
+            }
+        }
+        
+        healthStore.execute(query)
+    }
+    
+    private func fetchBiologicalSex() {
+        do {
+            let biologicalSex = try healthStore.biologicalSex()
+            DispatchQueue.main.async {
+                self.userGender = biologicalSex.biologicalSex
+                print("Fetched biological sex: \(biologicalSex.biologicalSex.description)")
+            }
+        } catch {
+            print("Error fetching biological sex: \(error.localizedDescription)")
+        }
+    }
+    
+private func fetchAge() {
+    do {
+        let birthdayComponents = try healthStore.dateOfBirthComponents()
+        let calendar = Calendar.current
+        if let birthDate = calendar.date(from: birthdayComponents),
+           let age = calendar.dateComponents([.year], from: birthDate, to: Date()).year {
+            DispatchQueue.main.async {
+                self.userAge = age
+                print("Fetched age: \(age) years")
+            }
+        } else {
+            print("Could not calculate age from birth date components")
+        }
+    } catch {
+        print("Error fetching date of birth: \(error.localizedDescription)")
+    }
+}
     
     // MARK: - Data Fetching Methods
     
@@ -830,17 +927,91 @@ class HealthManager: ObservableObject {
     }
 
     private func fetchHydration(completion: @escaping (HealthMetric?) -> Void) {
-        // Hydration may not be available in all HealthKit implementations
-        // We'll create a placeholder metric for now
+        // Apple HealthKit doesn't directly track hydration, so we need to use a different approach
+        // We'll calculate a recommended daily water intake based on age, height, and optionally weight
+        
+        // Default recommended water intake for adults is around 2.7L for women and 3.7L for men
+        // This includes water from all beverages and foods
+        
+        let baseRecommendation: Double
+        var dailyWaterIntake: Double
+        
+        // Calculate based on gender, age and height
+        switch userGender {
+        case .female:
+            baseRecommendation = 2700.0 // 2.7L in ml
+        case .male:
+            baseRecommendation = 3700.0 // 3.7L in ml
+        default:
+            baseRecommendation = 3200.0 // Average between male and female
+        }
+        
+        // Age adjustment - younger people typically need relatively more water per kg of body weight
+        // Older adults may need less but should still maintain adequate intake
+        let ageAdjustment: Double
+        if userAge > 0 {
+            if userAge < 30 {
+                ageAdjustment = 1.1 // 10% more for younger adults
+            } else if userAge > 65 {
+                ageAdjustment = 0.9 // 10% less for older adults
+            } else {
+                ageAdjustment = 1.0 // No adjustment for middle-aged adults
+            }
+        } else {
+            ageAdjustment = 1.0 // Default if age unknown
+        }
+        
+        // Height adjustment - taller people typically need more water
+        let heightAdjustment: Double
+        if userHeight > 0 {
+            // Reference heights: ~1.7m for women, ~1.8m for men
+            let referenceHeight = (userGender == .female) ? 1.7 : 1.8
+            heightAdjustment = userHeight / referenceHeight
+        } else {
+            heightAdjustment = 1.0 // Default if height unknown
+        }
+        
+        // Calculate adjusted water intake recommendation
+        dailyWaterIntake = baseRecommendation * ageAdjustment * heightAdjustment
+        
+        // Round to nearest 50ml for cleaner display
+        dailyWaterIntake = round(dailyWaterIntake / 50) * 50
+        
+        // For now, we'll assume the user is meeting 80% of their recommended intake
+        // In a real app, you could track this via manual entry or smart water bottles
+        let estimatedIntake = dailyWaterIntake * 0.8
+        
+        // Create the metric with calculated recommendation
         let metric = HealthMetric(
-            id: "hydration", 
-            name: "Hydration", 
-            value: 2000, 
+            id: "hydration",
+            name: "Hydration",
+            value: estimatedIntake,
             unit: "ml",
             category: .lifestyle,
-            normalizedScore: 0.8
+            normalizedScore: normalizeHydration(estimatedIntake, recommended: dailyWaterIntake)
         )
+        
+        print("Calculated hydration recommendation: \(dailyWaterIntake) ml, estimated intake: \(estimatedIntake) ml")
         completion(metric)
+    }
+    
+    private func normalizeHydration(_ intake: Double, recommended: Double) -> Double {
+        // Calculate score based on percentage of recommended intake
+        let percentage = intake / recommended
+        
+        if percentage < 0.5 {
+            return 0.3 // Severely under-hydrated
+        } else if percentage < 0.7 {
+            return 0.5 // Somewhat under-hydrated
+        } else if percentage < 0.9 {
+            return 0.7 // Slightly under-hydrated
+        } else if percentage <= 1.1 {
+            return 1.0 // Optimal hydration
+        } else if percentage <= 1.3 {
+            return 0.9 // Slightly over-hydrated
+        } else {
+            return 0.8 // Significantly over-hydrated
+        }
     }
 
     // MARK: - Helper Methods
@@ -889,15 +1060,15 @@ class HealthManager: ObservableObject {
         // Update the appropriate category score
         switch category {
         case .bodyComposition:
-            bodyCompositionScore = categoryScore
+            bodyCompositionScore = categoryScore * totalWeight
         case .fitness:
-            fitnessScore = categoryScore
+            fitnessScore = categoryScore * totalWeight
         case .heartAndVitals:
-            heartvitalsScore = categoryScore
+            heartvitalsScore = categoryScore * totalWeight
         case .metabolic:
-            metabolicScore = categoryScore
+            metabolicScore = categoryScore * totalWeight
         case .lifestyle:
-            lifestyleScore = categoryScore
+            lifestyleScore = categoryScore * totalWeight
         }
         
         // Recalculate overall score
@@ -1002,9 +1173,62 @@ class HealthManager: ObservableObject {
     }
     
     private func normalizeLeanBodyMass(_ value: Double) -> Double {
-        // This would need to be adjusted based on height, gender, and age
-        // Returning a placeholder value
-        return 0.8
+        // Default score if we can't calculate properly
+        if userHeight <= 0 || userAge <= 0 {
+            return 0.8
+        }
+        
+        // Calculate Fat Free Mass Index (FFMI)
+        // FFMI = LBM (kg) / height (m)^2
+        let ffmi = value / (userHeight * userHeight)
+        
+        // FFMI interpretation based on gender
+        // These ranges are approximations and could be refined further
+        switch userGender {
+        case .female:
+            if ffmi < 14 {
+                return 0.3  // Very low FFMI for females
+            } else if ffmi < 16 {
+                return 0.6  // Low but acceptable
+            } else if ffmi < 18 {
+                return 0.8  // Good
+            } else if ffmi < 20 {
+                return 1.0  // Excellent
+            } else if ffmi < 22 {
+                return 0.9  // Very athletic/muscular
+            } else {
+                return 0.8  // Potentially very muscular or measurement error
+            }
+            
+        case .male:
+            if ffmi < 17 {
+                return 0.3  // Very low FFMI for males
+            } else if ffmi < 19 {
+                return 0.6  // Low but acceptable
+            } else if ffmi < 21 {
+                return 0.8  // Good
+            } else if ffmi < 23 {
+                return 1.0  // Excellent
+            } else if ffmi < 25 {
+                return 0.9  // Very athletic/muscular
+            } else {
+                return 0.8  // Potentially very muscular or measurement error
+            }
+            
+        default:
+            // For unknown gender, use a generic scale
+            if ffmi < 16 {
+                return 0.3  // Very low
+            } else if ffmi < 18 {
+                return 0.6  // Low
+            } else if ffmi < 20 {
+                return 0.8  // Good
+            } else if ffmi < 22 {
+                return 1.0  // Excellent
+            } else {
+                return 0.9  // Very muscular
+            }
+        }
     }
     
     private func normalizeBMI(_ value: Double) -> Double {
@@ -1258,5 +1482,17 @@ struct UserPreferences {
                 .lifestyle: 1.0
             ]
         )
+    }
+}
+
+// Extension to make HKBiologicalSex more readable
+extension HKBiologicalSex {
+    var description: String {
+        switch self {
+        case .female: return "Female"
+        case .male: return "Male"
+        case .other: return "Other"
+        default: return "Not Set"
+        }
     }
 }
