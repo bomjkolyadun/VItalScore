@@ -6,28 +6,36 @@ class HealthManager: ObservableObject {
     // Core components
     private let healthKitManager = HealthKitManager()
     private let userProfile = HealthUserProfile()
-    private lazy var metricNormalizer = MetricNormalizer(userProfile: userProfile)
+    private lazy var normalizerProvider = NormalizerProvider(userProfile: userProfile)
     
     // Fetcher components
     private lazy var bodyCompositionFetcher = BodyCompositionFetcher(
-        healthKitManager: healthKitManager, 
-        normalizer: metricNormalizer
+        healthKitManager: healthKitManager,
+ 
+        normalizer: normalizerProvider
+            .getNormalizer(
+                for: .bodyComposition
+            ) as! BodyCompositionNormalizerProtocol
     )
     private lazy var fitnessFetcher = FitnessFetcher(
         healthKitManager: healthKitManager, 
-        normalizer: metricNormalizer
+        normalizer: normalizerProvider
+            .getNormalizer(for: .fitness) as! FitnessNormalizerProtocol
     )
     private lazy var heartVitalsFetcher = HeartVitalsFetcher(
         healthKitManager: healthKitManager,
-        normalizer: metricNormalizer
+        normalizer: normalizerProvider
+            .getNormalizer(for: .heartAndVitals) as! VitalsNormalizerProtocol
     )
     private lazy var metabolicFetcher = MetabolicFetcher(
         healthKitManager: healthKitManager,
-        normalizer: metricNormalizer
+        normalizer: normalizerProvider
+            .getNormalizer(for: .metabolic) as! MetabolicNormalizerProtocol
     )
     private lazy var lifestyleFetcher = LifestyleFetcher(
         healthKitManager: healthKitManager,
-        normalizer: metricNormalizer
+        normalizer: normalizerProvider
+            .getNormalizer(for: .lifestyle) as! LifestyleNormalizerProtocol
     )
     
     // Published properties for UI updates

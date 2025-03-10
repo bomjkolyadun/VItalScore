@@ -3,9 +3,12 @@ import HealthKit
 
 class HeartVitalsFetcher {
     private let healthKitManager: HealthKitManager
-    private let normalizer: MetricNormalizer
-    
-    init(healthKitManager: HealthKitManager, normalizer: MetricNormalizer) {
+    private let normalizer: VitalsNormalizerProtocol
+
+    init(
+        healthKitManager: HealthKitManager,
+        normalizer: VitalsNormalizerProtocol
+    ) {
         self.healthKitManager = healthKitManager
         self.normalizer = normalizer
     }

@@ -3,9 +3,12 @@ import HealthKit
 
 class LifestyleFetcher {
     private let healthKitManager: HealthKitManager
-    private let normalizer: MetricNormalizer
-    
-    init(healthKitManager: HealthKitManager, normalizer: MetricNormalizer) {
+    private let normalizer: LifestyleNormalizerProtocol
+
+    init(
+        healthKitManager: HealthKitManager,
+        normalizer: LifestyleNormalizerProtocol
+    ) {
         self.healthKitManager = healthKitManager
         self.normalizer = normalizer
     }
@@ -40,7 +43,19 @@ class LifestyleFetcher {
             return
         }
         
-        let predicate = healthKitManager.createLastWeekPredicate()
+        // Get data from the last 7 days for more recent sleep patterns
+        let calendar = Calendar.current
+        let now = Date()
+        guard let sevenDaysAgo = calendar.date(byAdding: .day, value: -7, to: now) else {
+            completion(nil)
+            return
+        }
+        
+        let predicate = HKQuery.predicateForSamples(
+            withStart: sevenDaysAgo,
+            end: now,
+            options: .strictStartDate
+        )
         
         let query = HKSampleQuery(
             sampleType: sleepType,
@@ -54,31 +69,48 @@ class LifestyleFetcher {
                 return
             }
             
-            var totalSleepTime: TimeInterval = 0
-            var inBedCount = 0
+            // Group samples by day to calculate nightly sleep
+            let sleepByNight = Dictionary(grouping: samples) { sample -> Date in
+                // Use midnight of the day as the key
+                let components = calendar.dateComponents([.year, .month, .day], from: sample.startDate)
+                return calendar.date(from: components) ?? sample.startDate
+            }
             
-            for sample in samples {
-                if sample.value == HKCategoryValueSleepAnalysis.inBed.rawValue || 
-                   sample.value == HKCategoryValueSleepAnalysis.asleepUnspecified.rawValue ||
-                   sample.value == HKCategoryValueSleepAnalysis.asleepCore.rawValue ||
-                   sample.value == HKCategoryValueSleepAnalysis.asleepDeep.rawValue ||
-                   sample.value == HKCategoryValueSleepAnalysis.asleepREM.rawValue {
-                    totalSleepTime += sample.endDate.timeIntervalSince(sample.startDate)
-                    inBedCount += 1
+            // We now have sleep samples grouped by night
+            var totalSleepTime: TimeInterval = 0
+            var nightCount = 0
+            
+            for (_, dailySamples) in sleepByNight {
+                var nightlySleepDuration: TimeInterval = 0
+                
+                for sample in dailySamples {
+                    if sample.value == HKCategoryValueSleepAnalysis.inBed.rawValue || 
+                       sample.value == HKCategoryValueSleepAnalysis.asleepUnspecified.rawValue ||
+                       sample.value == HKCategoryValueSleepAnalysis.asleepCore.rawValue ||
+                       sample.value == HKCategoryValueSleepAnalysis.asleepDeep.rawValue ||
+                       sample.value == HKCategoryValueSleepAnalysis.asleepREM.rawValue {
+                        nightlySleepDuration += sample.endDate.timeIntervalSince(sample.startDate)
+                    }
+                }
+                
+                // Only count nights with meaningful sleep data
+                if nightlySleepDuration > 0 {
+                    totalSleepTime += nightlySleepDuration
+                    nightCount += 1
                 }
             }
             
             // If we have less than 3 nights of data, not enough to calculate
-            if inBedCount < 3 {
-                print("Not enough sleep data: only \(inBedCount) nights")
+            if nightCount < 1 {
+                print("Not enough sleep data: only \(nightCount) nights")
                 completion(nil)
                 return
             }
             
             // Calculate average sleep time in hours
-            let averageSleepHours = (totalSleepTime / Double(inBedCount)) / 3600.0
+            let averageSleepHours = (totalSleepTime / Double(nightCount)) / 3600.0
             
-            print("Fetched sleep: \(averageSleepHours) hours per night")
+            print("Fetched sleep: \(averageSleepHours) hours per night across \(nightCount) nights")
             
             let metric = HealthMetric(
                 id: "sleep", 
@@ -95,9 +127,79 @@ class LifestyleFetcher {
     }
 
     private func fetchHydration(completion: @escaping (HealthMetric?) -> Void) {
-        // Apple HealthKit doesn't directly track hydration
-        // Calculate recommended daily water intake based on demographics
+        // Try to get actual hydration data if available in HealthKit
+        if #available(iOS 15.0, *) {
+            if let waterType = HKObjectType.quantityType(forIdentifier: .dietaryWater) {
+                let calendar = Calendar.current
+                let now = Date()
+                guard let yesterday = calendar.date(byAdding: .day, value: -1, to: now) else {
+                    fallbackHydrationCalculation(completion: completion)
+                    return
+                }
+                
+                let predicate = HKQuery.predicateForSamples(
+                    withStart: yesterday,
+                    end: now,
+                    options: .strictStartDate
+                )
+                
+                let query = HKStatisticsQuery(
+                    quantityType: waterType,
+                    quantitySamplePredicate: predicate,
+                    options: .cumulativeSum
+                ) { _, result, error in
+                    guard let result = result, let sum = result.sumQuantity() else {
+                        print("No recent water intake data: \(error?.localizedDescription ?? "No data")")
+                        self.fallbackHydrationCalculation(completion: completion)
+                        return
+                    }
+                    
+                    let waterIntake = sum.doubleValue(for: HKUnit.literUnit(with: .milli))
+                    print("Fetched actual hydration: \(waterIntake) ml")
+                    
+                    // Calculate recommended intake for comparison
+                    let recommendedIntake = self.calculateRecommendedWaterIntake()
+                    
+                    let metric = HealthMetric(
+                        id: "hydration",
+                        name: "Hydration",
+                        value: waterIntake,
+                        unit: "ml",
+                        category: .lifestyle,
+                        normalizedScore: self.normalizer.normalizeHydration(waterIntake, recommended: recommendedIntake)
+                    )
+                    completion(metric)
+                }
+                healthKitManager.healthStore.execute(query)
+                return
+            }
+        }
         
+        // Fall back to calculation if HealthKit data not available
+        fallbackHydrationCalculation(completion: completion)
+    }
+
+    private func fallbackHydrationCalculation(completion: @escaping (HealthMetric?) -> Void) {
+        let recommendedIntake = calculateRecommendedWaterIntake()
+        
+        // For estimation, assume the user is meeting 80% of their recommended intake
+        let estimatedIntake = recommendedIntake * 0.8
+        
+        // Create the metric with calculated recommendation
+        let metric = HealthMetric(
+            id: "hydration",
+            name: "Hydration",
+            value: estimatedIntake,
+            unit: "ml",
+            category: .lifestyle,
+            normalizedScore: self.normalizer.normalizeHydration(estimatedIntake, recommended: recommendedIntake)
+        )
+        
+        print("Using calculated hydration: \(recommendedIntake) ml recommended, \(estimatedIntake) ml estimated")
+        completion(metric)
+    }
+
+    private func calculateRecommendedWaterIntake() -> Double {
         let baseRecommendation: Double
         var dailyWaterIntake: Double
         
@@ -141,22 +243,6 @@ class LifestyleFetcher {
         dailyWaterIntake = baseRecommendation * ageAdjustment * heightAdjustment
         
         // Round to nearest 50ml for cleaner display
-        dailyWaterIntake = round(dailyWaterIntake / 50) * 50
-        
-        // For now, we'll assume the user is meeting 80% of their recommended intake
-        let estimatedIntake = dailyWaterIntake * 0.8
-        
-        // Create the metric with calculated recommendation
-        let metric = HealthMetric(
-            id: "hydration",
-            name: "Hydration",
-            value: estimatedIntake,
-            unit: "ml",
-            category: .lifestyle,
-            normalizedScore: self.normalizer.normalizeHydration(estimatedIntake, recommended: dailyWaterIntake)
-        )
-        
-        print("Calculated hydration recommendation: \(dailyWaterIntake) ml, estimated intake: \(estimatedIntake) ml")
-        completion(metric)
+        return round(dailyWaterIntake / 50) * 50
     }
 }

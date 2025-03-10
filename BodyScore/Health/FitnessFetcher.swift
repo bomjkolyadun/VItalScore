@@ -3,9 +3,12 @@ import HealthKit
 
 class FitnessFetcher {
     private let healthKitManager: HealthKitManager
-    private let normalizer: MetricNormalizer
-    
-    init(healthKitManager: HealthKitManager, normalizer: MetricNormalizer) {
+    private let normalizer: FitnessNormalizerProtocol
+
+    init(
+        healthKitManager: HealthKitManager,
+        normalizer: FitnessNormalizerProtocol
+    ) {
         self.healthKitManager = healthKitManager
         self.normalizer = normalizer
     }

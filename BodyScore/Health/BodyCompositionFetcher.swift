@@ -3,13 +3,16 @@ import HealthKit
 
 class BodyCompositionFetcher {
     private let healthKitManager: HealthKitManager
-    private let normalizer: MetricNormalizer
-    
+    private let normalizer: BodyCompositionNormalizerProtocol
+
     // Additional properties to store weight and height for BMI calculation
     private var latestWeight: Double?
     private var latestHeight: Double?
     
-    init(healthKitManager: HealthKitManager, normalizer: MetricNormalizer) {
+    init(
+        healthKitManager: HealthKitManager,
+        normalizer: BodyCompositionNormalizerProtocol
+    ) {
         self.healthKitManager = healthKitManager
         self.normalizer = normalizer
     }
