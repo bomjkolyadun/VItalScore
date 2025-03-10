@@ -1152,26 +1152,91 @@ class HealthManager: ObservableObject {
     // MARK: - Normalization Methods (0-1 scale)
     
     private func normalizeBodyFat(_ percent: Double) -> Double {
-        // Example normalization (would be adjusted based on gender and age)
-        // For men: 10-20% is ideal, >25% is poor
-        // For women: 18-28% is ideal, >32% is poor
-      let value = percent * 100.0
-        // This is a simplified version, would need gender/age adjustment
-        if value < 10 {
-            return 0.0  // Too low is not ideal
-        } else if value < 15 {
-            return 1.0  // Ideal for athletes
-        } else if value < 20 {
-            return 0.9  // Good for men
-        } else if value < 25 {
-            return 0.8  // Acceptable for men, good for women
-        } else if value < 30 {
-            return 0.6  // Acceptable for women
+        let value = percent * 100.0
+        
+        // Handle case when we don't have gender or age information
+        if userGender == .notSet || userAge <= 0 {
+            // Fall back to simplified general scale
+            if value < 10 {
+                return 0.4  // Too low is not ideal for most people
+            } else if value < 20 {
+                return 0.9  // Generally good
+            } else if value < 30 {
+                return 0.7  // Acceptable for most
+            } else {
+                return max(0.2, 1.0 - ((value - 30) / 20))  // Gradually decrease
+            }
+        }
+        
+        // Age-specific adjustments
+        let ageAdjustment: Double
+        if userAge < 30 {
+            ageAdjustment = 0.0  // Lower body fat is normal for younger people
+        } else if userAge < 40 {
+            ageAdjustment = 2.0  // Slight adjustment upward
+        } else if userAge < 50 {
+            ageAdjustment = 3.5  // More adjustment for middle age
+        } else if userAge < 60 {
+            ageAdjustment = 5.0  // Even more for older age
         } else {
-            return max(0.0, 1 - ((value - 30) / 20))  // Gradually decrease score
+            ageAdjustment = 6.5  // Highest adjustment for seniors
+        }
+        
+        // Gender-specific assessment with age adjustment
+        switch userGender {
+        case .male:
+            if value < 6 {
+                return 0.3  // Too low, potentially unhealthy
+            } else if value < (10 + ageAdjustment) {
+                return 1.0  // Excellent
+            } else if value < (15 + ageAdjustment) {
+                return 0.9  // Very good
+            } else if value < (20 + ageAdjustment) {
+                return 0.8  // Good
+            } else if value < (25 + ageAdjustment) {
+                return 0.6  // Acceptable
+            } else if value < (30 + ageAdjustment) {
+                return 0.4  // Poor
+            } else {
+                return max(0.1, 0.4 - ((value - (30 + ageAdjustment)) / 15))  // Very poor
+            }
+            
+        case .female:
+            if value < 12 {
+                return 0.3  // Too low, potentially unhealthy
+            } else if value < (18 + ageAdjustment) {
+                return 1.0  // Excellent
+            } else if value < (23 + ageAdjustment) {
+                return 0.9  // Very good
+            } else if value < (28 + ageAdjustment) {
+                return 0.8  // Good
+            } else if value < (33 + ageAdjustment) {
+                return 0.6  // Acceptable
+            } else if value < (38 + ageAdjustment) {
+                return 0.4  // Poor
+            } else {
+                return max(0.1, 0.4 - ((value - (38 + ageAdjustment)) / 15))  // Very poor
+            }
+            
+        default:
+            // For other genders, use a mid-range approach
+            if value < 10 {
+                return 0.3  // Too low
+            } else if value < (14 + ageAdjustment) {
+                return 1.0  // Excellent
+            } else if value < (20 + ageAdjustment) {
+                return 0.9  // Very good
+            } else if value < (25 + ageAdjustment) {
+                return 0.8  // Good
+            } else if value < (30 + ageAdjustment) {
+                return 0.6  // Acceptable
+            } else if value < (35 + ageAdjustment) {
+                return 0.4  // Poor
+            } else {
+                return max(0.1, 0.4 - ((value - (35 + ageAdjustment)) / 15))  // Very poor
+            }
         }
     }
-    
     private func normalizeLeanBodyMass(_ value: Double) -> Double {
         // Default score if we can't calculate properly
         if userHeight <= 0 || userAge <= 0 {
@@ -1251,16 +1316,72 @@ class HealthManager: ObservableObject {
     }
     
     private func normalizeVO2Max(_ value: Double) -> Double {
-        // VO2 Max normalization (would be adjusted by age and gender)
-        // This is a simplified version
-        if value < 30 {
-            return max(0.1, value / 30)  // Poor
-        } else if value < 40 {
-            return 0.6 + (value - 30) / 25  // Fair to Good
-        } else if value < 50 {
-            return 0.8 + (value - 40) / 50  // Good to Excellent
+        // If we don't have gender or age, use simplified version
+        if userGender == .notSet || userAge <= 0 {
+            // Simplified version without demographic data
+            if value < 30 {
+                return max(0.1, value / 30)  // Poor
+            } else if value < 40 {
+                return 0.6 + (value - 30) / 25  // Fair to Good
+            } else if value < 50 {
+                return 0.8 + (value - 40) / 50  // Good to Excellent
+            } else {
+                return 1.0  // Excellent
+            }
+        }
+        
+        // Get age bracket adjustments
+        let ageAdjustment: Double
+        if userAge < 30 {
+            ageAdjustment = 0  // Base reference group
+        } else if userAge < 40 {
+            ageAdjustment = -2  // Slight decrease in expected VO2Max
+        } else if userAge < 50 {
+            ageAdjustment = -5  // Moderate decrease
+        } else if userAge < 60 {
+            ageAdjustment = -7  // Larger decrease
         } else {
-            return 1.0  // Excellent
+            ageAdjustment = -10  // Significant decrease for seniors
+        }
+        
+        // Gender-specific assessment with age adjustment
+        switch userGender {
+        case .male:
+            let adjustedValue = value - ageAdjustment
+            if adjustedValue < 35 {
+                return max(0.1, adjustedValue / 35)  // Poor
+            } else if adjustedValue < 42 {
+                return 0.6 + (adjustedValue - 35) / 17.5  // Fair
+            } else if adjustedValue < 50 {
+                return 0.8 + (adjustedValue - 42) / 40  // Good
+            } else {
+                return 1.0  // Excellent
+            }
+            
+        case .female:
+            let adjustedValue = value - ageAdjustment
+            if adjustedValue < 30 {
+                return max(0.1, adjustedValue / 30)  // Poor
+            } else if adjustedValue < 37 {
+                return 0.6 + (adjustedValue - 30) / 17.5  // Fair
+            } else if adjustedValue < 45 {
+                return 0.8 + (adjustedValue - 37) / 40  // Good
+            } else {
+                return 1.0  // Excellent
+            }
+            
+        default:
+            // For other genders, use a mid-range approach
+            let adjustedValue = value - ageAdjustment
+            if adjustedValue < 33 {
+                return max(0.1, adjustedValue / 33)  // Poor
+            } else if adjustedValue < 40 {
+                return 0.6 + (adjustedValue - 33) / 17.5  // Fair
+            } else if adjustedValue < 48 {
+                return 0.8 + (adjustedValue - 40) / 40  // Good
+            } else {
+                return 1.0  // Excellent
+            }
         }
     }
     
@@ -1280,17 +1401,79 @@ class HealthManager: ObservableObject {
     }
     
     private func normalizeActiveCalories(_ value: Double) -> Double {
-        // Target varies by gender, weight, age, but ~400-500 for women, ~500-600 for men is decent
-        if value < 100 {
-            return 0.1
-        } else if value < 300 {
-            return 0.3 + (value - 100) / 400
-        } else if value < 500 {
-            return 0.6 + (value - 300) / 500
-        } else if value < 800 {
-            return 0.8 + (value - 500) / 1500
+        // If we don't have gender or age information, use the default scale
+        if userGender == .notSet || userAge <= 0 {
+            if value < 100 {
+                return 0.1
+            } else if value < 300 {
+                return 0.3 + (value - 100) / 400
+            } else if value < 500 {
+                return 0.6 + (value - 300) / 500
+            } else if value < 800 {
+                return 0.8 + (value - 500) / 1500
+            } else {
+                return 1.0
+            }
+        }
+        
+        // Age adjustment factor - older people need fewer calories to achieve the same score
+        let ageAdjustment: Double
+        if userAge < 30 {
+            ageAdjustment = 1.0  // Base reference
+        } else if userAge < 40 {
+            ageAdjustment = 0.9  // 10% reduction
+        } else if userAge < 50 {
+            ageAdjustment = 0.85 // 15% reduction
+        } else if userAge < 60 {
+            ageAdjustment = 0.8  // 20% reduction
         } else {
-            return 1.0
+            ageAdjustment = 0.75 // 25% reduction for seniors
+        }
+        
+        // Gender-specific scaling with age adjustment
+        switch userGender {
+        case .male:
+            let adjustedValue = value / ageAdjustment
+            if adjustedValue < 150 {
+                return 0.1
+            } else if adjustedValue < 350 {
+                return 0.3 + (adjustedValue - 150) / 400
+            } else if adjustedValue < 600 {
+                return 0.6 + (adjustedValue - 350) / 500
+            } else if adjustedValue < 900 {
+                return 0.8 + (adjustedValue - 600) / 1500
+            } else {
+                return 1.0
+            }
+            
+        case .female:
+            let adjustedValue = value / ageAdjustment
+            if adjustedValue < 100 {
+                return 0.1
+            } else if adjustedValue < 250 {
+                return 0.3 + (adjustedValue - 100) / 300
+            } else if adjustedValue < 450 {
+                return 0.6 + (adjustedValue - 250) / 400
+            } else if adjustedValue < 700 {
+                return 0.8 + (adjustedValue - 450) / 1250
+            } else {
+                return 1.0
+            }
+            
+        default:
+            // For other genders, use a middle-ground approach
+            let adjustedValue = value / ageAdjustment
+            if adjustedValue < 125 {
+                return 0.1
+            } else if adjustedValue < 300 {
+                return 0.3 + (adjustedValue - 125) / 350
+            } else if adjustedValue < 525 {
+                return 0.6 + (adjustedValue - 300) / 450
+            } else if adjustedValue < 800 {
+                return 0.8 + (adjustedValue - 525) / 1375
+            } else {
+                return 1.0
+            }
         }
     }
     
@@ -1361,16 +1544,78 @@ class HealthManager: ObservableObject {
     }
 
     private func normalizeBMR(_ value: Double) -> Double {
-        // This would need customization based on age, gender, weight, etc.
-        // Simplified implementation
-        if value < 1000 {
-            return 0.5  // Low
-        } else if value < 1400 {
-            return 0.7  // Below average
-        } else if value < 1800 {
-            return 0.9  // Average to good
+        // If we don't have gender or age information, use the default scale
+        if userGender == .notSet || userAge <= 0 {
+            // Simplified implementation when demographic data is missing
+            if value < 1000 {
+                return 0.5  // Low
+            } else if value < 1400 {
+                return 0.7  // Below average
+            } else if value < 1800 {
+                return 0.9  // Average to good
+            } else {
+                return 1.0  // High
+            }
+        }
+        
+        // Age adjustment factors - BMR naturally decreases with age
+        let ageAdjustment: Double
+        if userAge < 30 {
+            ageAdjustment = 0        // Base reference
+        } else if userAge < 40 {
+            ageAdjustment = -100     // Slight decrease expected
+        } else if userAge < 50 {
+            ageAdjustment = -200     // Moderate decrease
+        } else if userAge < 60 {
+            ageAdjustment = -300     // Larger decrease
         } else {
-            return 1.0  // High (could be good for active people)
+            ageAdjustment = -400     // Significant decrease for seniors
+        }
+        
+        // Gender-specific assessment with age adjustment
+        switch userGender {
+        case .male:
+            let adjustedValue = value - ageAdjustment
+            if adjustedValue < 1400 {
+                return 0.5  // Low for males
+            } else if adjustedValue < 1600 {
+                return 0.7  // Below average
+            } else if adjustedValue < 1800 {
+                return 0.8  // Average
+            } else if adjustedValue < 2000 {
+                return 0.9  // Good
+            } else {
+                return 1.0  // Excellent
+            }
+            
+        case .female:
+            let adjustedValue = value - ageAdjustment
+            if adjustedValue < 1200 {
+                return 0.5  // Low for females
+            } else if adjustedValue < 1400 {
+                return 0.7  // Below average
+            } else if adjustedValue < 1600 {
+                return 0.8  // Average
+            } else if adjustedValue < 1800 {
+                return 0.9  // Good
+            } else {
+                return 1.0  // Excellent
+            }
+            
+        default:
+            // For other genders, use a middle-ground approach
+            let adjustedValue = value - ageAdjustment
+            if adjustedValue < 1300 {
+                return 0.5  // Low
+            } else if adjustedValue < 1500 {
+                return 0.7  // Below average
+            } else if adjustedValue < 1700 {
+                return 0.8  // Average
+            } else if adjustedValue < 1900 {
+                return 0.9  // Good
+            } else {
+                return 1.0  // Excellent
+            }
         }
     }
 
