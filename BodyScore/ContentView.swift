@@ -166,20 +166,85 @@ struct BreakdownView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
-                    // Introduction
-                    Text("Your score is calculated from the following categories:")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                        .padding(.horizontal)
-                    
-                    // Show all metric categories with detailed breakdown
-                    ForEach(HealthMetricCategory.allCases) { category in
-                        CategoryBreakdownView(category: category)
-                    }
+                    UserInfoCard()
+                    IntroductionText()
+                    MetricCategoriesBreakdown()
                 }
                 .padding(.vertical)
             }
             .navigationTitle("Score Breakdown")
+        }
+    }
+}
+
+struct UserInfoCard: View {
+    @EnvironmentObject private var healthManager: HealthManager
+    
+    var body: some View {
+        VStack(alignment: .leading) {
+            Text("Your Information")
+                .font(.headline)
+                .padding(.bottom, 8)
+            
+            HStack(spacing: 20) {
+                UserInfoItem(
+                    icon: "person.crop.circle.fill",
+                    label: "Age",
+                    value: "\(healthManager.userAge) years"
+                )
+                
+                UserInfoItem(
+                    icon: "arrow.up.and.down",
+                    label: "Height",
+                    value: healthManager.formattedHeight
+                )
+            }
+        }
+        .padding()
+        .background(Color.gray.opacity(0.1))
+        .cornerRadius(12)
+        .padding(.horizontal)
+    }
+}
+
+struct IntroductionText: View {
+    var body: some View {
+        Text("Your score is calculated from the following categories:")
+            .font(.subheadline)
+            .foregroundColor(.secondary)
+            .padding(.horizontal)
+    }
+}
+
+struct MetricCategoriesBreakdown: View {
+    var body: some View {
+        ForEach(HealthMetricCategory.allCases) { category in
+            CategoryBreakdownView(category: category)
+        }
+    }
+}
+
+struct UserInfoItem: View {
+    let icon: String
+    let label: String
+    let value: String
+    
+    var body: some View {
+        HStack {
+            Image(systemName: icon)
+                .font(.title2)
+                .foregroundColor(.blue)
+                .frame(width: 24)
+            
+            VStack(alignment: .leading) {
+                Text(label)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                
+                Text(value)
+                    .font(.callout)
+                    .fontWeight(.medium)
+            }
         }
     }
 }
