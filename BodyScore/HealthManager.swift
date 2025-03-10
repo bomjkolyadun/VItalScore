@@ -67,7 +67,7 @@ class HealthManager: ObservableObject {
             vo2Max, stepCount, activeEnergyBurned,
             restingHeartRate, heartRateVariability, oxygenSaturation,
             bloodPressureSystolic, bloodPressureDiastolic,
-            basalEnergyBurned, height, sex,
+            basalEnergyBurned, height, sex, dob
         ]
         
         // Add workout type
@@ -183,23 +183,23 @@ class HealthManager: ObservableObject {
         }
     }
     
-private func fetchAge() {
-    do {
-        let birthdayComponents = try healthStore.dateOfBirthComponents()
-        let calendar = Calendar.current
-        if let birthDate = calendar.date(from: birthdayComponents),
-           let age = calendar.dateComponents([.year], from: birthDate, to: Date()).year {
-            DispatchQueue.main.async {
-                self.userAge = age
-                print("Fetched age: \(age) years")
+    private func fetchAge() {
+        do {
+            let birthdayComponents = try healthStore.dateOfBirthComponents()
+            let calendar = Calendar.current
+            if let birthDate = calendar.date(from: birthdayComponents),
+               let age = calendar.dateComponents([.year], from: birthDate, to: Date()).year {
+                DispatchQueue.main.async {
+                    self.userAge = age
+                    print("Fetched age: \(age) years")
+                }
+            } else {
+                print("Could not calculate age from birth date components")
             }
-        } else {
-            print("Could not calculate age from birth date components")
+        } catch {
+            print("Error fetching date of birth: \(error.localizedDescription)")
         }
-    } catch {
-        print("Error fetching date of birth: \(error.localizedDescription)")
     }
-}
     
     // MARK: - Data Fetching Methods
     
