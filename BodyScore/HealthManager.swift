@@ -181,58 +181,36 @@ class HealthManager: ObservableObject {
     }
     
     func calculateBodyScore() {
-        var totalScore = 0.0
-        var availableWeight = 0.0
+        // Use the new BodyScoreCalculator for computing the score
+        let result = BodyScoreCalculator.calculateBodyScore(
+            from: metrics,
+            with: userPreferences
+        )
         
-        // Get available categories
-        let availableCategories = Set(metrics.map { $0.category })
+        // Update the overall body score and confidence score
+        bodyScore = result.bodyScore
+        confidenceScore = result.confidenceScore
         
-        // Calculate total available weight
-        for (category, weight) in userPreferences.categoryWeights {
-            if availableCategories.contains(category) {
-                availableWeight += weight
-            }
+        // Update individual category scores
+        if let score = result.categoryScores[.bodyComposition] {
+            bodyCompositionScore = score
         }
         
-        // If no data is available at all
-        if availableWeight == 0 {
-            bodyScore = 0
-            confidenceScore = 0
-            return
+        if let score = result.categoryScores[.fitness] {
+            fitnessScore = score
         }
         
-        // Calculate weighted score for each category
-        if availableCategories.contains(.bodyComposition) {
-            let weight = userPreferences.categoryWeights[.bodyComposition] ?? 1.0
-            totalScore += (bodyCompositionScore * weight) / availableWeight
+        if let score = result.categoryScores[.heartAndVitals] {
+            heartvitalsScore = score
         }
         
-        if availableCategories.contains(.fitness) {
-            let weight = userPreferences.categoryWeights[.fitness] ?? 1.0
-            totalScore += (fitnessScore * weight) / availableWeight
+        if let score = result.categoryScores[.metabolic] {
+            metabolicScore = score
         }
         
-        if availableCategories.contains(.heartAndVitals) {
-            let weight = userPreferences.categoryWeights[.heartAndVitals] ?? 1.0
-            totalScore += (heartvitalsScore * weight) / availableWeight
+        if let score = result.categoryScores[.lifestyle] {
+            lifestyleScore = score
         }
-        
-        if availableCategories.contains(.metabolic) {
-            let weight = userPreferences.categoryWeights[.metabolic] ?? 1.0
-            totalScore += (metabolicScore * weight) / availableWeight
-        }
-        
-        if availableCategories.contains(.lifestyle) {
-            let weight = userPreferences.categoryWeights[.lifestyle] ?? 1.0
-            totalScore += (lifestyleScore * weight) / availableWeight
-        }
-        
-        // Calculate confidence score based on available data
-        let totalPossibleWeight = userPreferences.categoryWeights.values.reduce(0, +)
-        confidenceScore = (availableWeight / totalPossibleWeight) * 100.0
-        
-        // Update the overall body score
-        bodyScore = totalScore
         
         // Save the score record
         saveScoreRecord()
@@ -252,17 +230,5 @@ class HealthManager: ObservableObject {
         
         // Use ScoreRecordStore to save the record
         ScoreRecordStore.shared.saveRecord(record)
-    }
-    
-    // Debug function to check data fetching status
-    func debugFetchStatus() {
-        print("--- HEALTH DATA FETCH STATUS ---")
-        print("Total metrics: \(metrics.count)")
-        print("Body Composition: \(metrics.filter { $0.category == .bodyComposition }.count) metrics")
-        print("Fitness: \(metrics.filter { $0.category == .fitness }.count) metrics")
-        print("Heart & Vitals: \(metrics.filter { $0.category == .heartAndVitals }.count} metrics")
-        print("Metabolic: \(metrics.filter { $0.category == .metabolic }.count} metrics")
-        print("Lifestyle: \(metrics.filter { $0.category == .lifestyle }.count} metrics")
-        print("------------------------------")
     }
 }
