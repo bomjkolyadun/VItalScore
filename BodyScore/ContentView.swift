@@ -58,6 +58,8 @@ struct DashboardView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 20) {
+                    Spacer(minLength: 20) // Add space above ScoreGaugeView
+                    
                     // Main Score Display
                     ScoreGaugeView(
                         score: healthManager.bodyScore,
@@ -116,7 +118,7 @@ struct DashboardView: View {
                                     MetricCardView(metric: metric)
                                 }
                                 
-                                if healthManager.metrics.isEmpty {
+                                if (healthManager.metrics.isEmpty) {
                                     Text("No metrics available")
                                         .frame(width: 120, height: 100)
                                         .background(Color.gray.opacity(0.1))
@@ -144,15 +146,6 @@ struct DashboardView: View {
                 .padding(.vertical)
             }
             .navigationTitle("Body Score")
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button(action: {
-                        // Open info/about sheet
-                    }) {
-                        Image(systemName: "info.circle")
-                    }
-                }
-            }
         }
     }
 }
