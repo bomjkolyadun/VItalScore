@@ -10,10 +10,6 @@ struct BodyScoreApp: App {
         WindowGroup {
             ContentView()
                 .environmentObject(healthManager)
-                .onAppear {
-                    // Request authorization when app launches
-                    healthManager.requestAuthorization()
-                }
         }
         .modelContainer(for: ScoreRecord.self)
         .onChange(of: scenePhase) { oldPhase, newPhase in
