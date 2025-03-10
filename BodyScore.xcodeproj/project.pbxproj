@@ -80,7 +80,9 @@
 				0A453BBC2D7E7A860077724A /* BodyScoreUITests */,
 				0A453B9F2D7E7A850077724A /* Products */,
 			);
+			indentWidth = 4;
 			sourceTree = "<group>";
+			tabWidth = 4;
 		};
 		0A453B9F2D7E7A850077724A /* Products */ = {
 			isa = PBXGroup;
