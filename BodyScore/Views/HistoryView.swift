@@ -59,47 +59,7 @@ struct HistoryView: View {
             days: timeRange.days
         )
         
-        // If no data, add sample data (for preview only)
-        if chartData.isEmpty {
-            loadSampleData()
-        }
-    }
-    
-    private func loadSampleData() {
-        // Convert sample records to chart data format
-        let records = ScoreRecord.sampleData
-            .filter { record in
-                if let cutoffDate = Calendar.current.date(
-                    byAdding: .day,
-                    value: -timeRange.days,
-                    to: Date()
-                ) {
-                    return record.date >= cutoffDate
-                }
-                return true
-            }
-        
-        let calendar = Calendar.current
-        var groupedRecords: [Date: [ScoreRecord]] = [:]
-        
-        for record in records {
-            let components = calendar.dateComponents([.year, .month, .day], from: record.date)
-            if let dayStart = calendar.date(from: components) {
-                if groupedRecords[dayStart] == nil {
-                    groupedRecords[dayStart] = []
-                }
-                groupedRecords[dayStart]?.append(record)
-            }
-        }
-        
-        chartData = groupedRecords.map { day, dayRecords in
-            let totalScore = dayRecords.reduce(0) { $0 + $1.bodyScore }
-            let totalConfidence = dayRecords.reduce(0) { $0 + $1.confidenceScore }
-            let avgScore = totalScore / Double(dayRecords.count)
-            let avgConfidence = totalConfidence / Double(dayRecords.count)
-            
-            return (date: day, score: avgScore, confidence: avgConfidence)
-        }.sorted { $0.date < $1.date }
+        // Remove the sample data fallback as we only want real data
     }
 }
 
@@ -160,25 +120,32 @@ struct ScoreHistoryListView: View {
     
     var body: some View {
         List {
-            ForEach(records) { record in
-                HStack {
-                    VStack(alignment: .leading) {
-                        Text(record.formattedDate)
+            if records.isEmpty {
+                Text("No records available for this time period")
+                    .foregroundColor(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding()
+            } else {
+                ForEach(records) { record in
+                    HStack {
+                        VStack(alignment: .leading) {
+                            Text(record.formattedDate)
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                            
+                            Text("Body Score: \(record.formattedBodyScore)")
+                                .font(.headline)
+                        }
+                        
+                        Spacer()
+                        
+                        Text(record.formattedConfidenceScore)
                             .font(.subheadline)
                             .foregroundColor(.secondary)
-                        
-                        Text("Body Score: \(record.formattedBodyScore)")
-                            .font(.headline)
                     }
-                    
-                    Spacer()
-                    
-                    Text(record.formattedConfidenceScore)
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
                 }
+                .onDelete(perform: deleteItems)
             }
-            .onDelete(perform: deleteItems)
         }
         .onAppear {
             loadRecords()
@@ -188,19 +155,7 @@ struct ScoreHistoryListView: View {
     private func loadRecords() {
         records = ScoreRecordStore.shared.getScoreHistory(context: modelContext, days: days)
         
-        // If no data, load sample data
-        if records.isEmpty {
-            records = ScoreRecord.sampleData.filter { record in
-                if let cutoffDate = Calendar.current.date(
-                    byAdding: .day,
-                    value: -days,
-                    to: Date()
-                ) {
-                    return record.date >= cutoffDate
-                }
-                return true
-            }
-        }
+        // Remove the sample data fallback as we only want real data
     }
     
     private func deleteItems(offsets: IndexSet) {
