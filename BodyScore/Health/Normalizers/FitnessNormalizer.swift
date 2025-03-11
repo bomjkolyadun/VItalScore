@@ -84,7 +84,8 @@ class FitnessNormalizer: FitnessNormalizerProtocol {
         } else if value < 5000 {
             return 0.3 + (value - 1000) / (4000 * 2)
         } else if value < 10000 {
-            return 0.6 + (value - 5000) / (5000 * 1.3)
+            // Adjusted factor to smoothly reach 0.9 at 10,000 steps
+            return 0.6 + (value - 5000) / (5000 * (10.0 / 3.0))
         } else if value < 15000 {
             return 0.9 + (value - 10000) / 5000
         } else {

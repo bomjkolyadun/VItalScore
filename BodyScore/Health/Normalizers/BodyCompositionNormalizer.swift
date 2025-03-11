@@ -20,7 +20,7 @@ class BodyCompositionNormalizer: BodyCompositionNormalizerProtocol {
             } else if value < 30 {
                 return 0.7  // Acceptable for most
             } else {
-                return max(0.2, 1.0 - ((value - 30) / 20))  // Gradually decrease
+                return max(0.2, 0.7 - ((value - 30) / 20))  // Gradually decrease
             }
         }
         
