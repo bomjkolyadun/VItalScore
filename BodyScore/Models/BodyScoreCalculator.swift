@@ -33,24 +33,20 @@ class BodyScoreCalculator {
         for category in HealthMetricCategory.allCases {
             let categoryMetrics = metrics.filter { $0.category == category }
             categoryMetricCounts[category] = categoryMetrics.count
-            
+
             if !categoryMetrics.isEmpty {
-                // Calculate average normalized score for this category (0-1 scale)
                 let categoryAverage = categoryMetrics.reduce(0.0) { sum, metric in
+                    print("metric", metric.name, metric.normalizedScore)
                     return sum + metric.normalizedScore
                 } / Double(categoryMetrics.count)
-                
-                // Convert to 0-100 scale
+
                 let categoryScore = categoryAverage * 100.0
-                
-                // Apply category weight
                 let weight = preferences.categoryWeights[category] ?? 1.0
+
+                print("Category: \(category), Score: \(categoryScore), Weight: \(weight)")
+
                 availableWeight += weight
-                
-                // Store category score
                 categoryScores[category] = categoryScore
-                
-                // For the weighted average calculation
                 totalScore += categoryScore * weight
             }
         }
