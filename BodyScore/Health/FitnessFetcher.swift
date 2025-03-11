@@ -1,7 +1,7 @@
 import Foundation
 import HealthKit
 
-class FitnessFetcher {
+class FitnessFetcher: HealthMetricFetcherProtocol {
     private let healthKitManager: HealthKitManager
     private let normalizer: FitnessNormalizerProtocol
 

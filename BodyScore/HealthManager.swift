@@ -4,39 +4,12 @@ import Combine
 
 class HealthManager: ObservableObject {
     // Core components
-    private let healthKitManager = HealthKitManager()
-    private let userProfile = HealthUserProfile()
-    private lazy var normalizerProvider = NormalizerProvider(userProfile: userProfile)
-    
-    // Fetcher components
-    private lazy var bodyCompositionFetcher = BodyCompositionFetcher(
-        healthKitManager: healthKitManager,
- 
-        normalizer: normalizerProvider
-            .getNormalizer(
-                for: .bodyComposition
-            ) as! BodyCompositionNormalizerProtocol
-    )
-    private lazy var fitnessFetcher = FitnessFetcher(
-        healthKitManager: healthKitManager, 
-        normalizer: normalizerProvider
-            .getNormalizer(for: .fitness) as! FitnessNormalizerProtocol
-    )
-    private lazy var heartVitalsFetcher = HeartVitalsFetcher(
-        healthKitManager: healthKitManager,
-        normalizer: normalizerProvider
-            .getNormalizer(for: .heartAndVitals) as! VitalsNormalizerProtocol
-    )
-    private lazy var metabolicFetcher = MetabolicFetcher(
-        healthKitManager: healthKitManager,
-        normalizer: normalizerProvider
-            .getNormalizer(for: .metabolic) as! MetabolicNormalizerProtocol
-    )
-    private lazy var lifestyleFetcher = LifestyleFetcher(
-        healthKitManager: healthKitManager,
-        normalizer: normalizerProvider
-            .getNormalizer(for: .lifestyle) as! LifestyleNormalizerProtocol
-    )
+    private let healthKitManager: HealthKitManager
+    private let userProfile: HealthUserProfile
+    private let normalizerProvider: NormalizerProvider
+
+    // Dictionary to store fetchers by category
+    private var fetchers: [HealthMetricCategory: HealthMetricFetcherProtocol]
     
     // Published properties for UI updates
     @Published var bodyScore: Double = 0
@@ -63,8 +36,41 @@ class HealthManager: ObservableObject {
         return "\(userProfile.userAge)"
     }
     
-    init() {
-        // HealthKit availability is checked in HealthKitManager
+    init(
+        healthKitManager: HealthKitManager = HealthKitManager(),
+        userProfile: HealthUserProfile = HealthUserProfile(),
+        fetchers: [HealthMetricCategory: HealthMetricFetcherProtocol] = [:]
+    ) {
+        self.healthKitManager = healthKitManager
+        self.userProfile = userProfile
+        self.normalizerProvider = NormalizerProvider(userProfile: userProfile)
+        self.fetchers = fetchers
+        
+        // If no fetchers provided, initialize with default fetchers
+        if fetchers.isEmpty {
+            self.fetchers = [
+                .bodyComposition: BodyCompositionFetcher(
+                    healthKitManager: healthKitManager,
+                    normalizer: normalizerProvider.getNormalizer(for: .bodyComposition) as! BodyCompositionNormalizerProtocol
+                ),
+                .fitness: FitnessFetcher(
+                    healthKitManager: healthKitManager,
+                    normalizer: normalizerProvider.getNormalizer(for: .fitness) as! FitnessNormalizerProtocol
+                ),
+                .heartAndVitals: HeartVitalsFetcher(
+                    healthKitManager: healthKitManager,
+                    normalizer: normalizerProvider.getNormalizer(for: .heartAndVitals) as! VitalsNormalizerProtocol
+                ),
+                .metabolic: MetabolicFetcher(
+                    healthKitManager: healthKitManager,
+                    normalizer: normalizerProvider.getNormalizer(for: .metabolic) as! MetabolicNormalizerProtocol
+                ),
+                .lifestyle: LifestyleFetcher(
+                    healthKitManager: healthKitManager,
+                    normalizer: normalizerProvider.getNormalizer(for: .lifestyle) as! LifestyleNormalizerProtocol
+                )
+            ]
+        }
     }
     
     // Request authorization to access HealthKit data
@@ -81,51 +87,23 @@ class HealthManager: ObservableObject {
         }
     }
     
-    // Fetch all relevant health data
+    // Unified method to fetch all relevant health data
     func fetchHealthData() {
-        fetchBodyCompositionData()
-        fetchFitnessData()
-        fetchHeartAndVitalsData()
-        fetchMetabolicData()
-        fetchLifestyleData()
+        let dispatchGroup = DispatchGroup()
         
-        // Calculate overall body score after fetching all data
-        calculateBodyScore()
-    }
-    
-    // Methods to fetch each category of data
-    private func fetchBodyCompositionData() {
-        bodyCompositionFetcher.fetchMetrics { metrics in
-            self.updateMetrics(metrics, category: .bodyComposition)
-            self.calculateCategoryScore(for: .bodyComposition)
+        // Call fetch on each available fetcher
+        for (category, fetcher) in fetchers {
+            dispatchGroup.enter()
+            fetcher.fetchMetrics { metrics in
+                self.updateMetrics(metrics, category: category)
+                self.calculateCategoryScore(for: category)
+                dispatchGroup.leave()
+            }
         }
-    }
-    
-    private func fetchFitnessData() {
-        fitnessFetcher.fetchMetrics { metrics in
-            self.updateMetrics(metrics, category: .fitness)
-            self.calculateCategoryScore(for: .fitness)
-        }
-    }
-    
-    private func fetchHeartAndVitalsData() {
-        heartVitalsFetcher.fetchMetrics { metrics in
-            self.updateMetrics(metrics, category: .heartAndVitals)
-            self.calculateCategoryScore(for: .heartAndVitals)
-        }
-    }
-    
-    private func fetchMetabolicData() {
-        metabolicFetcher.fetchMetrics { metrics in
-            self.updateMetrics(metrics, category: .metabolic)
-            self.calculateCategoryScore(for: .metabolic)
-        }
-    }
-    
-    private func fetchLifestyleData() {
-        lifestyleFetcher.fetchMetrics { metrics in
-            self.updateMetrics(metrics, category: .lifestyle)
-            self.calculateCategoryScore(for: .lifestyle)
+        
+        // Calculate overall body score after all fetchers complete
+        dispatchGroup.notify(queue: .main) {
+            self.calculateBodyScore()
         }
     }
     
@@ -183,9 +161,6 @@ class HealthManager: ObservableObject {
         case .lifestyle:
             lifestyleScore = categoryScore * totalWeight
         }
-        
-        // Recalculate overall score
-        calculateBodyScore()
     }
     
     func calculateBodyScore() {

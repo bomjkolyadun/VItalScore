@@ -1,7 +1,7 @@
 import Foundation
 import HealthKit
 
-class BodyCompositionFetcher {
+class BodyCompositionFetcher: HealthMetricFetcherProtocol {
     private let healthKitManager: HealthKitManager
     private let normalizer: BodyCompositionNormalizerProtocol
 
