@@ -168,15 +168,15 @@ class BodyCompositionFetcher {
             // Store for BMI calculation
             self.latestHeight = meters
             
-            let metric = HealthMetric(
-                id: "height", 
-                name: "Height", 
-                value: meters,
-                unit: "m", 
-                category: .bodyComposition,
-                normalizedScore: 0.5  // Neutral score for height
-            )
-            completion(metric)
+//            let metric = HealthMetric(
+//                id: "height", 
+//                name: "Height", 
+//                value: meters,
+//                unit: "m", 
+//                category: .bodyComposition,
+//                normalizedScore: 0.5  // Neutral score for height
+//            )
+            completion(nil)
         }
         
         healthKitManager.healthStore.execute(query)
