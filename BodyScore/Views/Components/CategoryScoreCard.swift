@@ -19,7 +19,7 @@ struct CategoryScoreCard: View {
             }
             
             HStack {
-                Text("\(Int(score))")
+                Text("\(Int(round(score)))")
                     .font(.title2)
                     .fontWeight(.semibold)
                 
