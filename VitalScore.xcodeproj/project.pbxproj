@@ -24,9 +24,9 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		0A453B9E2D7E7A850077724A /* BodyScore.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BodyScore.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		0A453BAF2D7E7A860077724A /* BodyScoreTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BodyScoreTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		0A453BB92D7E7A860077724A /* BodyScoreUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BodyScoreUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		0A453B9E2D7E7A850077724A /* VitalScore.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VitalScore.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		0A453BAF2D7E7A860077724A /* VitalScoreTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = VitalScoreTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		0A453BB92D7E7A860077724A /* VitalScoreUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = VitalScoreUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -87,9 +87,9 @@
 		0A453B9F2D7E7A850077724A /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				0A453B9E2D7E7A850077724A /* BodyScore.app */,
-				0A453BAF2D7E7A860077724A /* BodyScoreTests.xctest */,
-				0A453BB92D7E7A860077724A /* BodyScoreUITests.xctest */,
+				0A453B9E2D7E7A850077724A /* VitalScore.app */,
+				0A453BAF2D7E7A860077724A /* VitalScoreTests.xctest */,
+				0A453BB92D7E7A860077724A /* VitalScoreUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -97,9 +97,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		0A453B9D2D7E7A850077724A /* BodyScore */ = {
+		0A453B9D2D7E7A850077724A /* VitalScore */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 0A453BC32D7E7A860077724A /* Build configuration list for PBXNativeTarget "BodyScore" */;
+			buildConfigurationList = 0A453BC32D7E7A860077724A /* Build configuration list for PBXNativeTarget "VitalScore" */;
 			buildPhases = (
 				0A453B9A2D7E7A850077724A /* Sources */,
 				0A453B9B2D7E7A850077724A /* Frameworks */,
@@ -112,16 +112,16 @@
 			fileSystemSynchronizedGroups = (
 				0A453BA02D7E7A850077724A /* BodyScore */,
 			);
-			name = BodyScore;
+			name = VitalScore;
 			packageProductDependencies = (
 			);
 			productName = BodyScore;
-			productReference = 0A453B9E2D7E7A850077724A /* BodyScore.app */;
+			productReference = 0A453B9E2D7E7A850077724A /* VitalScore.app */;
 			productType = "com.apple.product-type.application";
 		};
-		0A453BAE2D7E7A860077724A /* BodyScoreTests */ = {
+		0A453BAE2D7E7A860077724A /* VitalScoreTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 0A453BC62D7E7A860077724A /* Build configuration list for PBXNativeTarget "BodyScoreTests" */;
+			buildConfigurationList = 0A453BC62D7E7A860077724A /* Build configuration list for PBXNativeTarget "VitalScoreTests" */;
 			buildPhases = (
 				0A453BAB2D7E7A860077724A /* Sources */,
 				0A453BAC2D7E7A860077724A /* Frameworks */,
@@ -135,16 +135,16 @@
 			fileSystemSynchronizedGroups = (
 				0A453BB22D7E7A860077724A /* BodyScoreTests */,
 			);
-			name = BodyScoreTests;
+			name = VitalScoreTests;
 			packageProductDependencies = (
 			);
 			productName = BodyScoreTests;
-			productReference = 0A453BAF2D7E7A860077724A /* BodyScoreTests.xctest */;
+			productReference = 0A453BAF2D7E7A860077724A /* VitalScoreTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		0A453BB82D7E7A860077724A /* BodyScoreUITests */ = {
+		0A453BB82D7E7A860077724A /* VitalScoreUITests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 0A453BC92D7E7A860077724A /* Build configuration list for PBXNativeTarget "BodyScoreUITests" */;
+			buildConfigurationList = 0A453BC92D7E7A860077724A /* Build configuration list for PBXNativeTarget "VitalScoreUITests" */;
 			buildPhases = (
 				0A453BB52D7E7A860077724A /* Sources */,
 				0A453BB62D7E7A860077724A /* Frameworks */,
@@ -158,11 +158,11 @@
 			fileSystemSynchronizedGroups = (
 				0A453BBC2D7E7A860077724A /* BodyScoreUITests */,
 			);
-			name = BodyScoreUITests;
+			name = VitalScoreUITests;
 			packageProductDependencies = (
 			);
 			productName = BodyScoreUITests;
-			productReference = 0A453BB92D7E7A860077724A /* BodyScoreUITests.xctest */;
+			productReference = 0A453BB92D7E7A860077724A /* VitalScoreUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 /* End PBXNativeTarget section */
@@ -188,7 +188,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 0A453B992D7E7A850077724A /* Build configuration list for PBXProject "BodyScore" */;
+			buildConfigurationList = 0A453B992D7E7A850077724A /* Build configuration list for PBXProject "VitalScore" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -202,9 +202,9 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				0A453B9D2D7E7A850077724A /* BodyScore */,
-				0A453BAE2D7E7A860077724A /* BodyScoreTests */,
-				0A453BB82D7E7A860077724A /* BodyScoreUITests */,
+				0A453B9D2D7E7A850077724A /* VitalScore */,
+				0A453BAE2D7E7A860077724A /* VitalScoreTests */,
+				0A453BB82D7E7A860077724A /* VitalScoreUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -260,12 +260,12 @@
 /* Begin PBXTargetDependency section */
 		0A453BB12D7E7A860077724A /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 0A453B9D2D7E7A850077724A /* BodyScore */;
+			target = 0A453B9D2D7E7A850077724A /* VitalScore */;
 			targetProxy = 0A453BB02D7E7A860077724A /* PBXContainerItemProxy */;
 		};
 		0A453BBB2D7E7A860077724A /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 0A453B9D2D7E7A850077724A /* BodyScore */;
+			target = 0A453B9D2D7E7A850077724A /* VitalScore */;
 			targetProxy = 0A453BBA2D7E7A860077724A /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -469,7 +469,7 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/BodyScore.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/BodyScore";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/VitalScore.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/VitalScore";
 			};
 			name = Debug;
 		};
@@ -487,7 +487,7 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/BodyScore.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/BodyScore";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/VitalScore.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/VitalScore";
 			};
 			name = Release;
 		};
@@ -526,7 +526,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		0A453B992D7E7A850077724A /* Build configuration list for PBXProject "BodyScore" */ = {
+		0A453B992D7E7A850077724A /* Build configuration list for PBXProject "VitalScore" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				0A453BC12D7E7A860077724A /* Debug */,
@@ -535,7 +535,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		0A453BC32D7E7A860077724A /* Build configuration list for PBXNativeTarget "BodyScore" */ = {
+		0A453BC32D7E7A860077724A /* Build configuration list for PBXNativeTarget "VitalScore" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				0A453BC42D7E7A860077724A /* Debug */,
@@ -544,7 +544,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		0A453BC62D7E7A860077724A /* Build configuration list for PBXNativeTarget "BodyScoreTests" */ = {
+		0A453BC62D7E7A860077724A /* Build configuration list for PBXNativeTarget "VitalScoreTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				0A453BC72D7E7A860077724A /* Debug */,
@@ -553,7 +553,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		0A453BC92D7E7A860077724A /* Build configuration list for PBXNativeTarget "BodyScoreUITests" */ = {
+		0A453BC92D7E7A860077724A /* Build configuration list for PBXNativeTarget "VitalScoreUITests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				0A453BCA2D7E7A860077724A /* Debug */,

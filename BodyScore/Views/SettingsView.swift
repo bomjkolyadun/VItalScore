@@ -71,7 +71,7 @@ struct SettingsView: View {
                 
                 Section("About") {
                     HStack {
-                        Text("Body Score App")
+                        Text("Vital Score App")
                         Spacer()
                         Text("v1.0")
                             .foregroundColor(.secondary)

@@ -36,7 +36,7 @@ struct ScoreGaugeView: View {
                     Text(String(format: "%.0f", score))
                         .font(.system(size: 54, weight: .bold, design: .rounded))
                     
-                    Text("Body Score")
+                    Text("Vital Score")
                         .font(.callout)
                         .foregroundColor(.secondary)
                     
