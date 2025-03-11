@@ -38,6 +38,61 @@ class MetabolicFetcher {
     }
     
     private func fetchBMR(completion: @escaping (HealthMetric?) -> Void) {
+        // First try to use the Katch-McArdle Formula if lean body mass is available
+        fetchLeanBodyMass { leanBodyMass in
+            if let leanBodyMass = leanBodyMass {
+                // Calculate BMR using Katch-McArdle Formula: 370 + (21.6 * LBM)
+                // where LBM is lean body mass in kg
+                let bmrValue = 370 + (21.6 * leanBodyMass)
+                print("Calculated BMR using Katch-McArdle: \(bmrValue) kcal/day (LBM: \(leanBodyMass) kg)")
+                
+                let metric = HealthMetric(
+                    id: "bmr", 
+                    name: "Basal Metabolic Rate", 
+                    value: bmrValue, 
+                    unit: "kcal/day",
+                    category: .metabolic,
+                    normalizedScore: self.normalizer.normalizeBMR(bmrValue)
+                )
+                completion(metric)
+                return
+            }
+            
+            // Fall back to HealthKit data if lean body mass isn't available
+            self.fetchBMRFromHealthKit(completion: completion)
+        }
+    }
+    
+    private func fetchLeanBodyMass(completion: @escaping (Double?) -> Void) {
+        guard let leanBodyMassType = HKQuantityType.quantityType(forIdentifier: .leanBodyMass) else {
+            completion(nil)
+            return
+        }
+        
+        let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: false)
+        let query = HKSampleQuery(
+            sampleType: leanBodyMassType,
+            predicate: nil, // Use the most recent reading regardless of time
+            limit: 1,
+            sortDescriptors: [sortDescriptor]
+        ) { _, samples, error in
+            guard error == nil, 
+                  let samples = samples,
+                  let mostRecentSample = samples.first as? HKQuantitySample else {
+                print("Failed to fetch lean body mass: \(error?.localizedDescription ?? "No data")")
+                completion(nil)
+                return
+            }
+            
+            // Get lean body mass in kg
+            let leanBodyMass = mostRecentSample.quantity.doubleValue(for: .gramUnit(with: .kilo))
+            completion(leanBodyMass)
+        }
+        
+        healthKitManager.healthStore.execute(query)
+    }
+    
+    private func fetchBMRFromHealthKit(completion: @escaping (HealthMetric?) -> Void) {
         guard let bmrType = HKQuantityType.quantityType(forIdentifier: .basalEnergyBurned) else {
             completion(nil)
             return
