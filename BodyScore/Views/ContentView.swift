@@ -24,11 +24,11 @@ struct ContentView: View {
                 .tag(1)
             
             // History Tab
-            HistoryView()
-                .tabItem {
-                    Label("History", systemImage: "clock")
-                }
-                .tag(2)
+            // HistoryView()
+            //     .tabItem {
+            //         Label("History", systemImage: "clock")
+            //     }
+            //     .tag(2)
             
             // Settings Tab
             SettingsView()
