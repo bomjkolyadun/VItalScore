@@ -6,6 +6,7 @@ struct SettingsView: View {
     
     enum ProfileType: String, CaseIterable, Identifiable {
         case custom = "Custom"
+        case defaultProfile = "Default"
         case weightLoss = "Weight Loss"
         case fitness = "Fitness"
         case heartHealth = "Heart Health"
@@ -88,6 +89,8 @@ struct SettingsView: View {
         case .custom:
             // Do nothing, keep current settings
             break
+        case .defaultProfile:
+            healthManager.userPreferences = .defaultPreferences
         case .weightLoss:
             healthManager.userPreferences = .weightLossProfile
         case .fitness:
