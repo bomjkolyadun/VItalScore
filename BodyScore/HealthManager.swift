@@ -1,12 +1,16 @@
 import Foundation
 import HealthKit
 import Combine
+import SwiftData
 
 class HealthManager: ObservableObject {
     // Core components
     private let healthKitManager: HealthKitManager
     private let userProfile: HealthUserProfile
     private let normalizerProvider: NormalizerProvider
+    
+    // SwiftData ModelContext for persistent storage
+    private var modelContext: ModelContext?
 
     // Dictionary to store fetchers by category
     private var fetchers: [HealthMetricCategory: HealthMetricFetcherProtocol]
@@ -199,7 +203,16 @@ class HealthManager: ObservableObject {
         saveScoreRecord()
     }
     
+    // Set the model context
+    func setModelContext(_ context: ModelContext) {
+        self.modelContext = context
+    }
+    
     private func saveScoreRecord() {
+        guard let context = modelContext else {
+            print("ModelContext is not available - Score record not saved")
+            return
+        }
         let record = ScoreRecord(
             date: Date(),
             bodyScore: bodyScore,
@@ -212,6 +225,6 @@ class HealthManager: ObservableObject {
         )
         
         // Use ScoreRecordStore to save the record
-        ScoreRecordStore.shared.saveRecord(record)
+        ScoreRecordStore.shared.saveRecord(record, context: context)
     }
 }

@@ -58,8 +58,6 @@ struct HistoryView: View {
             context: modelContext, 
             days: timeRange.days
         )
-        
-        // Remove the sample data fallback as we only want real data
     }
 }
 
@@ -154,8 +152,6 @@ struct ScoreHistoryListView: View {
     
     private func loadRecords() {
         records = ScoreRecordStore.shared.getScoreHistory(context: modelContext, days: days)
-        
-        // Remove the sample data fallback as we only want real data
     }
     
     private func deleteItems(offsets: IndexSet) {

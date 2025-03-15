@@ -24,11 +24,11 @@ struct ContentView: View {
                 .tag(1)
             
             // History Tab
-            // HistoryView()
-            //     .tabItem {
-            //         Label("History", systemImage: "clock")
-            //     }
-            //     .tag(2)
+            HistoryView()
+                .tabItem {
+                    Label("History", systemImage: "clock")
+                }
+                .tag(2)
             
             // Settings Tab
             SettingsView()
@@ -39,6 +39,9 @@ struct ContentView: View {
         }
         .tabViewStyle(DefaultTabViewStyle())
         .onAppear {
+            // Inject the ModelContext into the HealthManager
+            healthManager.setModelContext(modelContext)
+            
             // Request HealthKit authorization when the app launches
             if !healthManager.isAuthorized {
                 healthManager.requestAuthorization()

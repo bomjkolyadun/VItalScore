@@ -59,12 +59,60 @@ class ScoreRecordStore {
     
     private init() {}
     
-    func saveRecord(_ record: ScoreRecord) {
-        // Logic to save the record via SwiftData will be handled through the ModelContainer in the app
-        print("Score record saved: \(record.bodyScore) with confidence \(record.confidenceScore)")
+    func saveRecord(_ record: ScoreRecord, context: ModelContext) {
+        do {
+            context.insert(record)
+            try context.save()
+            print("Score record saved: \(record.bodyScore) with confidence \(record.confidenceScore)")
+        } catch {
+            print("Failed to save score record: \(error.localizedDescription)")
+        }
     }
     
     func getScoreHistory(context: ModelContext, days: Int = 30) -> [ScoreRecord] {
+        return fetchScoreHistory(context: context, days: days)
+    }
+    
+    func getDailyAverages(context: ModelContext, days: Int = 30) -> [(date: Date, score: Double, confidence: Double)] {
+        let records = getScoreHistory(context: context, days: days)
+        
+        // Group records by day
+        let calendar = Calendar.current
+        var groupedRecords: [Date: [ScoreRecord]] = [:]
+        
+        for record in records {
+            // Properly normalize to start of day to ensure consistent grouping
+            let components = calendar.dateComponents([.year, .month, .day], from: record.date)
+            if let dayStart = calendar.date(from: components) {
+                if groupedRecords[dayStart] == nil {
+                    groupedRecords[dayStart] = []
+                }
+                groupedRecords[dayStart]?.append(record)
+            }
+        }
+        
+        // Calculate daily averages
+        let dailyAverages = groupedRecords.map { day, dayRecords in
+            let totalScore = dayRecords.reduce(0) { $0 + $1.bodyScore }
+            let totalConfidence = dayRecords.reduce(0) { $0 + $1.confidenceScore }
+            let avgScore = totalScore / Double(dayRecords.count)
+            let avgConfidence = totalConfidence / Double(dayRecords.count)
+            
+            return (date: day, score: avgScore, confidence: avgConfidence)
+        }.sorted { $0.date < $1.date }
+        
+        // Debug: Print the results
+        print("Daily averages count: \(dailyAverages.count)")
+        for (index, data) in dailyAverages.enumerated() {
+            let formatter = DateFormatter()
+            formatter.dateStyle = .short
+            print("[\(index)] Date: \(formatter.string(from: data.date)), Records: \(groupedRecords[data.date]?.count ?? 0)")
+        }
+        
+        return dailyAverages
+    }
+    
+    private func fetchScoreHistory(context: ModelContext, days: Int) -> [ScoreRecord] {
         let calendar = Calendar.current
         let endDate = Date()
         let startDate = calendar.date(byAdding: .day, value: -days, to: endDate)!
@@ -82,34 +130,6 @@ class ScoreRecordStore {
             print("Failed to fetch score history: \(error.localizedDescription)")
             return []
         }
-    }
-    
-    func getDailyAverages(context: ModelContext, days: Int = 30) -> [(date: Date, score: Double, confidence: Double)] {
-        let records = getScoreHistory(context: context, days: days)
-        
-        // Group records by day
-        let calendar = Calendar.current
-        var groupedRecords: [Date: [ScoreRecord]] = [:]
-        
-        for record in records {
-            let components = calendar.dateComponents([.year, .month, .day], from: record.date)
-            if let dayStart = calendar.date(from: components) {
-                if groupedRecords[dayStart] == nil {
-                    groupedRecords[dayStart] = []
-                }
-                groupedRecords[dayStart]?.append(record)
-            }
-        }
-        
-        // Calculate daily averages
-        return groupedRecords.map { day, dayRecords in
-            let totalScore = dayRecords.reduce(0) { $0 + $1.bodyScore }
-            let totalConfidence = dayRecords.reduce(0) { $0 + $1.confidenceScore }
-            let avgScore = totalScore / Double(dayRecords.count)
-            let avgConfidence = totalConfidence / Double(dayRecords.count)
-            
-            return (date: day, score: avgScore, confidence: avgConfidence)
-        }.sorted { $0.date < $1.date }
     }
 }
 
