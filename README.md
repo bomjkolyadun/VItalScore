@@ -30,11 +30,7 @@ Body Score is an iOS application that calculates a **Body Score (0–100)** base
    ```sh
    open BodyScore.xcodeproj
    ```
-3. Install dependencies (if any):
-   ```sh
-   swift package update
-   ```
-4. Run the app on an iOS simulator or device.
+3. Run the app on an iOS simulator or device.
 
 ## 🔐 Health Data Permissions
 The app requests the following Apple Health permissions:
