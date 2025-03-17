@@ -1,4 +1,4 @@
-# Body Score iOS App
+# Vital Score iOS App
 
 ## 📌 Overview
 Body Score is an iOS application that calculates a **Body Score (0–100)** based on Apple Health data. The score reflects overall physical well-being, fitness, and body composition. It adapts dynamically to missing data and provides a confidence score based on available health metrics.
