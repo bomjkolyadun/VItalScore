@@ -25,16 +25,15 @@ Get this app from the [TestFlight](https://testflight.apple.com/join/7gEeBpsV)
 - **Local Storage**: SwiftData / JSON
 
 ## 📲 Installation
-1. Clone the repository:
+1. Clone the repository
    ```sh
-   git clone https://github.com/your-repo/body-score-ios.git
-   cd body-score-ios
+   git clone git@github.com:bomjkolyadun/VitalScore.git`
    ```
-2. Open in Xcode:
+4. Open in Xcode:
    ```sh
-   open BodyScore.xcodeproj
+   open VitalScore.xcodeproj
    ```
-3. Run the app on an iOS simulator or device.
+5. Run the app on an iOS simulator or device.
 
 ## 🔐 Health Data Permissions
 The app requests the following Apple Health permissions:
